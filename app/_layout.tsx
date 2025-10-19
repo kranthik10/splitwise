@@ -1,14 +1,20 @@
 import '@/global.css';
+import { authClient } from "@/lib/auth-client";
 import { Stack } from "expo-router";
 
 export default function RootLayout() {
+  const { data: session } = authClient.useSession();
+  const isAuthenticated = !!session;
+
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="add-expense" options={{ presentation: 'modal', headerShown: true, title: 'Add Expense' }} />
-      <Stack.Screen name="add-group" options={{ presentation: 'modal', headerShown: true, title: 'New Group' }} />
-      <Stack.Screen name="settle-up" options={{ presentation: 'modal', headerShown: true, title: 'Settle Up' }} />
+      <Stack.Protected guard={isAuthenticated}>
+        <Stack.Screen name="(app)" />
+      </Stack.Protected>
+      <Stack.Protected guard={!isAuthenticated}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
     </Stack>
   );
 }

@@ -1,3 +1,4 @@
+import { authClient } from '@/lib/auth-client';
 import { User } from '@/types';
 import { storage } from '@/utils/storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +9,7 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 export default function AccountScreen() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const { data: session } = authClient.useSession();
 
   useFocusEffect(
     useCallback(() => {
@@ -17,7 +19,14 @@ export default function AccountScreen() {
 
   const loadUser = async () => {
     let userData = await storage.getUser();
-    if (!userData) {
+    if (!userData && session?.user) {
+      userData = {
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+      };
+      await storage.setUser(userData);
+    } else if (!userData) {
       userData = {
         id: 'current-user',
         name: 'You',
@@ -26,6 +35,10 @@ export default function AccountScreen() {
       await storage.setUser(userData);
     }
     setUser(userData);
+  };
+
+  const handleSignOut = async () => {
+    await authClient.signOut();
   };
 
   return (
@@ -44,7 +57,7 @@ export default function AccountScreen() {
         <View className="px-6 pb-6">
           <TouchableOpacity 
             className="bg-white rounded-2xl p-5 mb-3 flex-row items-center justify-between border border-primary-50"
-            onPress={() => router.push('/currency-settings')}
+            onPress={() => router.push('/currency-settings' as any)}
           >
             <View className="flex-row items-center flex-1">
               <View className="w-12 h-12 rounded-xl bg-primary-100 items-center justify-center mr-4">
@@ -89,6 +102,18 @@ export default function AccountScreen() {
             </View>
             <View className="bg-gray-100 p-2 rounded-full">
               <Ionicons name="arrow-forward" size={18} color="#6b7280" />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            className="bg-red-50 rounded-2xl p-5 mb-3 flex-row items-center justify-between border border-red-200 mt-6"
+            onPress={handleSignOut}
+          >
+            <View className="flex-row items-center flex-1">
+              <View className="w-12 h-12 rounded-xl bg-red-100 items-center justify-center mr-4">
+                <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+              </View>
+              <Text className="text-red-600 font-normal text-base">Sign Out</Text>
             </View>
           </TouchableOpacity>
         </View>
